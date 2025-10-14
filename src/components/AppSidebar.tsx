@@ -25,7 +25,7 @@ export const AppSidebar = () => {
           <h1 className="text-xl font-bold font-mono terminal-glow">
             Aztec<span className="text-primary">Pay</span>
           </h1>
-          <p className="text-xs text-muted-foreground mt-1">Private Payroll Network</p>
+          <p className="text-xs text-muted-foreground mt-1">Programmable Private Payroll</p>
         </div>
         
         <SidebarGroup>
