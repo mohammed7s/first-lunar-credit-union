@@ -1,0 +1,32 @@
+# Netlify Configuration for FLCU Monorepo
+
+[build]
+  # Base directory for the build
+  base = "frontend/"
+
+  # Build command
+  command = "yarn build"
+
+  # Directory to publish (relative to base)
+  publish = "dist"
+
+# Environment variables (set these in Netlify dashboard)
+# VITE_SUPABASE_URL
+# VITE_SUPABASE_ANON_KEY
+# VITE_SEPOLIA_RPC_URL
+# VITE_WALLETCONNECT_PROJECT_ID
+
+# Redirects for SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"

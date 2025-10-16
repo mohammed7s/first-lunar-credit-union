@@ -1,0 +1,51 @@
+{
+  "name": "First Lunar Credit Union (FLCU)",
+  "tagline": "Provable, Private, and Pledgeable Payroll",
+  "description": "A privacy-preserving payroll platform built on Aztec Network that enables employees to receive salaries privately, generate proofs of employment and income without revealing sensitive data, and access salary advances by pledging future earnings. Businesses can execute payroll onchain with complete privacy using USDC, USDT, eEUR, tGBP, and other stablecoins. Lenders can offer salary-backed loans with automatic pledge enforcement via smart contracts, eliminating default risk through trustless deductions at the protocol level.",
+  "repository": "https://github.com/mohammed7s/first-lunar-credit-union",
+  "website": "https://first-lunar-credit-union.netlify.app",
+  "documentation": "https://github.com/mohammed7s/first-lunar-credit-union#readme",
+  "category": "DeFi",
+  "tags": [
+    "payroll",
+    "privacy",
+    "aztec",
+    "zero-knowledge",
+    "lending",
+    "defi",
+    "stablecoins",
+    "proof-of-income"
+  ],
+  "blockchain": "Aztec Network",
+  "technologies": [
+    "Aztec Network",
+    "Noir",
+    "React",
+    "TypeScript",
+    "Vite",
+    "Express",
+    "Supabase",
+    "Wagmi",
+    "TailwindCSS"
+  ],
+  "team": [
+    {
+      "name": "Mohammed",
+      "role": "Full Stack Developer",
+      "github": "https://github.com/mohammed7s"
+    }
+  ],
+  "features": [
+    "Private salary payments on Aztec Network",
+    "Zero-knowledge proof of employment and income",
+    "Salary-backed lending with automatic pledge enforcement",
+    "Multi-currency payroll (USDC, USDT, eEUR, tGBP)",
+    "Cross-chain withdrawals",
+    "Privacy-preserving balance proofs"
+  ],
+  "status": "In Development",
+  "license": "MIT",
+  "contact": {
+    "email": "mohammed08774@gmail.com"
+  }
+}
