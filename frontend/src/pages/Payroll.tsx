@@ -4,9 +4,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUSDCBalance } from "@/hooks/useUSDCBalance";
+import { useAztecUSDCBalance } from "@/hooks/useAztecUSDCBalance";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ProcessPayrollDialog } from "@/components/ProcessPayrollDialog";
 
 interface Employee {
   id: string;
@@ -17,10 +18,14 @@ interface Employee {
 
 const Payroll = () => {
   const { organization } = useAuth();
-  const { formattedBalance, balanceNumber } = useUSDCBalance(); // Read from connected wallet
+  const { data: aztecBalance, isLoading: balanceLoading } = useAztecUSDCBalance();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+
+  const balanceNumber = aztecBalance ? parseFloat(aztecBalance.totalBalance) : 0;
+  const formattedBalance = aztecBalance?.totalBalance || "0";
 
   useEffect(() => {
     loadEmployees();
@@ -98,14 +103,21 @@ const Payroll = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 bg-gradient-glow border-primary/20">
           <p className="text-sm text-muted-foreground mb-1">
-            Available Balance (Ethereum)
+            Available Balance (Aztec)
           </p>
-          <p className="text-3xl font-bold font-mono">
-            ${parseFloat(formattedBalance).toLocaleString("en-US", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </p>
+          {balanceLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <p className="text-2xl font-bold font-mono">Loading...</p>
+            </div>
+          ) : (
+            <p className="text-3xl font-bold font-mono">
+              ${parseFloat(formattedBalance).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </p>
+          )}
         </Card>
 
         <Card className="p-6 bg-gradient-glow border-accent/20">
@@ -207,12 +219,22 @@ const Payroll = () => {
             size="lg"
             disabled={selectedEmployees.size === 0 || !hasSufficientBalance}
             className="group"
+            onClick={() => setShowPaymentDialog(true)}
           >
             Continue to Payment
             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </Card>
+
+      {/* Payment Dialog */}
+      <ProcessPayrollDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        employees={selectedEmployeesList}
+        totalAmount={totalPayroll}
+        availableBalance={balanceNumber}
+      />
     </div>
   );
 };

@@ -14,10 +14,20 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const db = {
   // Users
   users: {
-    create: async (wallet_address: string, wallet_type: 'obsidian' | 'metamask') => {
+    create: async (
+      wallet_address: string,
+      wallet_type: 'obsidian' | 'metamask',
+      additionalData?: { name?: string; email?: string; aztec_address?: string }
+    ) => {
+      const userData = {
+        wallet_address,
+        wallet_type,
+        ...(additionalData || {})
+      };
+
       return supabase
         .from('users')
-        .insert({ wallet_address, wallet_type })
+        .insert(userData)
         .select()
         .single();
     },
@@ -27,6 +37,23 @@ export const db = {
         .from('users')
         .select('*')
         .eq('wallet_address', wallet_address)
+        .single();
+    },
+
+    getByAztecAddress: async (aztec_address: string) => {
+      return supabase
+        .from('users')
+        .select('*')
+        .eq('aztec_address', aztec_address)
+        .single();
+    },
+
+    update: async (wallet_address: string, updates: any) => {
+      return supabase
+        .from('users')
+        .update(updates)
+        .eq('wallet_address', wallet_address)
+        .select()
         .single();
     },
   },

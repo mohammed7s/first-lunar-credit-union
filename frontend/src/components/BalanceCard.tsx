@@ -1,13 +1,15 @@
 import { Card } from "@/components/ui/card";
-import { DollarSign, Loader2, Eye, EyeOff, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, Loader2, Shield, Send } from "lucide-react";
 import { useAztecUSDCBalance } from "@/hooks/useAztecUSDCBalance";
 import { useAztecWallet } from "@/contexts/AztecWalletContext";
 import { useState } from "react";
+import { SendToCryptoDialog } from "./SendToCryptoDialog";
 
 export const BalanceCard = () => {
   const { aztecAccount, isConnected } = useAztecWallet();
   const { data: balance, isLoading, isError } = useAztecUSDCBalance();
-  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showSendDialog, setShowSendDialog] = useState(false);
 
   const formatBalance = (value: string) => {
     return parseFloat(value).toLocaleString("en-US", {
@@ -59,47 +61,26 @@ export const BalanceCard = () => {
           </div>
         </div>
 
-        {/* Balance Breakdown Toggle */}
+        {/* Withdraw to Ethereum Button */}
         {isConnected && !isLoading && !isError && balance && (
-          <>
-            <button
-              onClick={() => setShowBreakdown(!showBreakdown)}
-              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-            >
-              {showBreakdown ? (
-                <EyeOff className="w-3 h-3" />
-              ) : (
-                <Eye className="w-3 h-3" />
-              )}
-              <span>{showBreakdown ? 'Hide' : 'Show'} Balance Breakdown</span>
-            </button>
-
-            {/* Breakdown Details */}
-            {showBreakdown && (
-              <div className="pt-4 border-t border-border space-y-2">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Shield className="w-3 h-3 text-accent" />
-                    <span className="text-sm text-muted-foreground">Private Balance</span>
-                  </div>
-                  <span className="text-sm font-mono font-semibold">
-                    ${formatBalance(balance.privateBalance)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-3 h-3 text-secondary" />
-                    <span className="text-sm text-muted-foreground">Public Balance</span>
-                  </div>
-                  <span className="text-sm font-mono font-semibold">
-                    ${formatBalance(balance.publicBalance)}
-                  </span>
-                </div>
-              </div>
-            )}
-          </>
+          <Button
+            onClick={() => setShowSendDialog(true)}
+            className="w-full mt-2"
+            variant="outline"
+            size="sm"
+          >
+            <Send className="w-3 h-3 mr-2" />
+            Withdraw Balance to Ethereum
+          </Button>
         )}
       </div>
+
+      {/* Send to Crypto Dialog */}
+      <SendToCryptoDialog
+        open={showSendDialog}
+        onOpenChange={setShowSendDialog}
+        availableBalance={balance?.totalBalance || "0"}
+      />
     </Card>
   );
 };

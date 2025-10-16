@@ -1,13 +1,25 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, Building2, TrendingUp, DollarSign, ArrowUpRight, Shield, Loader2, Eye } from "lucide-react";
+import { Wallet, Building2, TrendingUp, DollarSign, ArrowUpRight, Shield, Loader2, Eye, Sparkles, UserCircle } from "lucide-react";
 import { ActivityFeed } from "./ActivityFeed";
 import { useAztecUSDCBalance } from "@/hooks/useAztecUSDCBalance";
 import { useAztecWallet } from "@/contexts/AztecWalletContext";
+import { SendToCryptoDialog } from "./SendToCryptoDialog";
+import { IndividualRegistrationDialog } from "./IndividualRegistrationDialog";
+import { useState } from "react";
 
 export const IndividualDashboard = () => {
   const { aztecAccount, isConnected } = useAztecWallet();
   const { data: balance, isLoading, isError } = useAztecUSDCBalance();
+  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
+  const [showRegistrationDialog, setShowRegistrationDialog] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [userAztecAddress, setUserAztecAddress] = useState<string>("");
+
+  const handleRegistrationComplete = (aztecAddress: string) => {
+    setUserAztecAddress(aztecAddress);
+    setIsRegistered(true);
+  };
 
   const formatBalance = (value: string) => {
     return parseFloat(value).toLocaleString("en-US", {
@@ -16,8 +28,86 @@ export const IndividualDashboard = () => {
     });
   };
 
+  // Show registration prompt if not registered
+  if (!isRegistered) {
+    return (
+      <>
+        <Card className="p-8 max-w-2xl mx-auto bg-gradient-card border-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
+          <div className="relative text-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <UserCircle className="w-10 h-10 text-primary" />
+            </div>
+            <h2 className="text-3xl font-bold mb-3">Welcome to FLCU!</h2>
+            <p className="text-muted-foreground text-lg mb-6">
+              To receive private payroll payments, you need to register your account.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-left">
+              <div className="p-4 bg-muted/20 rounded-lg">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                  <span className="text-primary font-bold">1</span>
+                </div>
+                <p className="text-sm font-semibold mb-1">Enter Details</p>
+                <p className="text-xs text-muted-foreground">Provide your name and email</p>
+              </div>
+              <div className="p-4 bg-muted/20 rounded-lg">
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center mb-2">
+                  <span className="text-accent font-bold">2</span>
+                </div>
+                <p className="text-sm font-semibold mb-1">Deploy Contract</p>
+                <p className="text-xs text-muted-foreground">We create your Aztec account</p>
+              </div>
+              <div className="p-4 bg-muted/20 rounded-lg">
+                <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
+                  <span className="text-secondary font-bold">3</span>
+                </div>
+                <p className="text-sm font-semibold mb-1">Start Receiving</p>
+                <p className="text-xs text-muted-foreground">Get private payroll payments</p>
+              </div>
+            </div>
+
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 group"
+              onClick={() => setShowRegistrationDialog(true)}
+            >
+              <Sparkles className="w-5 h-5 mr-2" />
+              Register Your Account
+            </Button>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Enter your details to create your private Aztec account
+            </p>
+          </div>
+        </Card>
+
+        <IndividualRegistrationDialog
+          open={showRegistrationDialog}
+          onOpenChange={setShowRegistrationDialog}
+          onRegistrationComplete={handleRegistrationComplete}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Registered User Info */}
+      {isRegistered && userAztecAddress && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Account Registered!</p>
+              <p className="text-xs text-muted-foreground font-mono">
+                Aztec Address: {userAztecAddress.slice(0, 12)}...{userAztecAddress.slice(-8)}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Balance Card */}
       <Card className="p-8 bg-gradient-card border-border relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
@@ -100,12 +190,16 @@ export const IndividualDashboard = () => {
             </div>
             <ArrowUpRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
-          <h3 className="text-lg font-semibold mb-2">Send to Crypto Wallet</h3>
+          <h3 className="text-lg font-semibold mb-2">Withdraw to Ethereum</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Send funds to any onchain wallet address
+            Withdraw funds to any Ethereum wallet address
           </p>
-          <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            Send Crypto
+          <Button
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => setShowWithdrawDialog(true)}
+            disabled={!isConnected || isLoading || isError}
+          >
+            Withdraw
           </Button>
         </Card>
 
@@ -144,6 +238,20 @@ export const IndividualDashboard = () => {
 
       {/* Activity Feed */}
       <ActivityFeed />
+
+      {/* Withdraw Dialog */}
+      <SendToCryptoDialog
+        open={showWithdrawDialog}
+        onOpenChange={setShowWithdrawDialog}
+        availableBalance={balance?.totalBalance || "0"}
+      />
+
+      {/* Registration Dialog */}
+      <IndividualRegistrationDialog
+        open={showRegistrationDialog}
+        onOpenChange={setShowRegistrationDialog}
+        onRegistrationComplete={handleRegistrationComplete}
+      />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { useAccount, useDisconnect } from "wagmi";
 import { useAztecWallet } from "@/contexts/AztecWalletContext";
 import { WalletConnect } from "./WalletConnect";
@@ -74,12 +75,23 @@ const WalletDisplay = ({ address, walletType, onDisconnect }: WalletDisplayProps
 };
 
 export const Header = () => {
+  const location = useLocation();
   const { address: ethAddress, isConnected: isEthConnected } = useAccount();
   const { disconnect: disconnectEth } = useDisconnect();
   const { aztecAccount, isConnected: isAztecConnected, connect: connectAztec, disconnect: disconnectAztec } = useAztecWallet();
   const [showConnectModal, setShowConnectModal] = useState(false);
 
+  // Determine if we're on the individual page
+  const isIndividualPage = location.pathname === "/" || location.pathname === "/individual";
+
   const isAnyWalletConnected = isEthConnected || isAztecConnected;
+
+  // Close modal when wallet connects
+  useEffect(() => {
+    if (isEthConnected || isAztecConnected) {
+      setShowConnectModal(false);
+    }
+  }, [isEthConnected, isAztecConnected]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -90,40 +102,66 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          {!isAnyWalletConnected ? (
-            <button
-              onClick={() => setShowConnectModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Wallet className="w-4 h-4" />
-              <span className="text-sm font-medium">Connect Wallet</span>
-            </button>
-          ) : (
+          {/* For Individual Page - Only Aztec Wallet */}
+          {isIndividualPage ? (
             <>
-              {isEthConnected && ethAddress && (
-                <WalletDisplay
-                  address={ethAddress}
-                  walletType="ethereum"
-                  onDisconnect={disconnectEth}
-                />
-              )}
-
-              {isAztecConnected && aztecAccount && (
-                <WalletDisplay
-                  address={aztecAccount.getAddress ? aztecAccount.getAddress().toString() : aztecAccount.address}
-                  walletType="aztec"
-                  onDisconnect={disconnectAztec}
-                />
-              )}
-
-              {isEthConnected && !isAztecConnected && (
+              {!isAztecConnected ? (
                 <button
                   onClick={connectAztec}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-sm"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   <Wallet className="w-4 h-4" />
-                  Connect Aztec
+                  <span className="text-sm font-medium">Connect Aztec Wallet</span>
                 </button>
+              ) : (
+                aztecAccount && (
+                  <WalletDisplay
+                    address={aztecAccount.getAddress ? aztecAccount.getAddress().toString() : aztecAccount.address}
+                    walletType="aztec"
+                    onDisconnect={disconnectAztec}
+                  />
+                )
+              )}
+            </>
+          ) : (
+            /* For Business Page - Both Wallets */
+            <>
+              {!isAnyWalletConnected ? (
+                <button
+                  onClick={() => setShowConnectModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  <Wallet className="w-4 h-4" />
+                  <span className="text-sm font-medium">Connect Wallet</span>
+                </button>
+              ) : (
+                <>
+                  {isEthConnected && ethAddress && (
+                    <WalletDisplay
+                      address={ethAddress}
+                      walletType="ethereum"
+                      onDisconnect={disconnectEth}
+                    />
+                  )}
+
+                  {isAztecConnected && aztecAccount && (
+                    <WalletDisplay
+                      address={aztecAccount.getAddress ? aztecAccount.getAddress().toString() : aztecAccount.address}
+                      walletType="aztec"
+                      onDisconnect={disconnectAztec}
+                    />
+                  )}
+
+                  {isEthConnected && !isAztecConnected && (
+                    <button
+                      onClick={connectAztec}
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-sm"
+                    >
+                      <Wallet className="w-4 h-4" />
+                      Connect Aztec
+                    </button>
+                  )}
+                </>
               )}
             </>
           )}

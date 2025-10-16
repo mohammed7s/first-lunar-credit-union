@@ -8,7 +8,7 @@ interface AztecWalletContextType {
   isConnecting: boolean;
   isConnected: boolean;
   connect: () => Promise<void>;
-  disconnect: () => void;
+  disconnect: () => Promise<void>;
 }
 
 const AztecWalletContext = createContext<AztecWalletContextType | undefined>(undefined);
@@ -36,8 +36,14 @@ export const AztecWalletProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const disconnect = () => {
-    toast.success("Obsidian wallet disconnected");
+  const disconnect = async () => {
+    try {
+      await aztecSdk.disconnect();
+      toast.success("Obsidian wallet disconnected");
+    } catch (error: any) {
+      console.error("Error disconnecting:", error);
+      toast.error("Failed to disconnect wallet");
+    }
   };
 
   return (
