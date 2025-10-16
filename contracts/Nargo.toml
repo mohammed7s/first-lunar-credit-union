@@ -1,6 +1,4 @@
-[package]
-name = "payroll_vault"
-type = "contract"
-authors = [""]
-
-[dependencies]
+[workspace]
+members = [
+    "src/nr/income_vault",
+]
