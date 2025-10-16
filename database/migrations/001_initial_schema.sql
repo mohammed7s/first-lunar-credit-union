@@ -10,10 +10,13 @@ CREATE TABLE users (
   wallet_address TEXT UNIQUE NOT NULL,
   wallet_type TEXT CHECK (wallet_type IN ('obsidian', 'metamask')) NOT NULL,
   name TEXT,
+  email TEXT,
+  aztec_address TEXT UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_users_wallet ON users(wallet_address);
+CREATE INDEX idx_users_aztec ON users(aztec_address);
 
 -- Organizations table
 CREATE TABLE organizations (

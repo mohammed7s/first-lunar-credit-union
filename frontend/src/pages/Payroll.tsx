@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import { db } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAztecUSDCBalance } from "@/hooks/useAztecUSDCBalance";
+import { useUSDCBalance } from "@/hooks/useUSDCBalance";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ProcessPayrollDialog } from "@/components/ProcessPayrollDialog";
@@ -18,14 +18,11 @@ interface Employee {
 
 const Payroll = () => {
   const { organization } = useAuth();
-  const { data: aztecBalance, isLoading: balanceLoading } = useAztecUSDCBalance();
+  const { balanceNumber, formattedBalance, isLoading: balanceLoading } = useUSDCBalance();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-
-  const balanceNumber = aztecBalance ? parseFloat(aztecBalance.totalBalance) : 0;
-  const formattedBalance = aztecBalance?.totalBalance || "0";
 
   useEffect(() => {
     loadEmployees();
@@ -103,7 +100,10 @@ const Payroll = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6 bg-gradient-glow border-primary/20">
           <p className="text-sm text-muted-foreground mb-1">
-            Available Balance (Aztec)
+            Available Balance (Ethereum)
+          </p>
+          <p className="text-xs text-muted-foreground mb-2">
+            Bridge USDC on Sepolia
           </p>
           {balanceLoading ? (
             <div className="flex items-center gap-2">

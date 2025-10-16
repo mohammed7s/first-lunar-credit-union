@@ -2,7 +2,10 @@
 
 Private payroll on Aztec Network with income pledging for credit access.
 
-**[📺 Video Demo](https://www.youtube.com/watch?v=dMtFE12n1Kk)** | **[🌐 Live Demo](https://first-lunar-credit-union.netlify.app/)**
+## Links
+
+- **📺 Video Demo:** https://youtu.be/0hRkdZ-1oPE
+- **🌐 Live App:** https://first-lunar-credit-union.netlify.app/
 
 ## What It Does
 

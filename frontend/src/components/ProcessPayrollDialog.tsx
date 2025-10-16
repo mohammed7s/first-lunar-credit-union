@@ -11,6 +11,25 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DollarSign, Users, Shield, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { useAccount } from "wagmi";
+import { ethers } from "ethers";
+
+// Human Bridge contracts on Sepolia
+const BRIDGE_CONTRACTS = {
+  PORTAL: '0x069840ae19473e452792c8e17fee77d78a3fcecb',
+  TOKEN: '0x93527f0552bef5fafc340bceac6a5a37b6c34496',
+};
+
+// ERC20 ABI (minimal)
+const ERC20_ABI = [
+  'function approve(address spender, uint256 amount) returns (bool)',
+  'function allowance(address owner, address spender) view returns (uint256)',
+];
+
+// Portal Bridge ABI (minimal)
+const PORTAL_ABI = [
+  'function depositToAztecPublic(bytes32 to, uint256 amount, bytes32 secretHash) payable',
+];
 
 interface Employee {
   id: string;
@@ -34,25 +53,99 @@ export const ProcessPayrollDialog = ({
   totalAmount,
   availableBalance,
 }: ProcessPayrollDialogProps) => {
+  const { address } = useAccount();
   const [isProcessing, setIsProcessing] = useState(false);
   const [usePrivateBalance, setUsePrivateBalance] = useState(true);
+  const [currentStep, setCurrentStep] = useState("");
 
   const handleProcessPayroll = async () => {
+    if (!address || !window.ethereum) {
+      toast.error("Please connect your Ethereum wallet");
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      // TODO: Implement actual payroll processing
-      // This will involve:
-      // 1. Call the payroll contract on Aztec
-      // 2. Transfer USDC from organization treasury to employee wallets
-      // 3. Use private or public balance based on user preference
-      // 4. Record transactions in database
+      // Setup provider and signer
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
 
-      toast.info("Processing payroll...");
+      // Total amount in token decimals (assuming 6 decimals for USDC)
+      const totalAmountWei = ethers.parseUnits(totalAmount.toString(), 6);
 
-      // Mock processing delay
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Setup contracts
+      const tokenContract = new ethers.Contract(BRIDGE_CONTRACTS.TOKEN, ERC20_ABI, signer);
+      const portalContract = new ethers.Contract(BRIDGE_CONTRACTS.PORTAL, PORTAL_ABI, signer);
 
-      toast.success(`Successfully paid ${employees.length} employees!`);
+      // Step 1: Check allowance
+      setCurrentStep("Checking token allowance...");
+      const allowance = await tokenContract.allowance(address, BRIDGE_CONTRACTS.PORTAL);
+
+      // Step 2: Approve if needed
+      if (allowance < totalAmountWei) {
+        setCurrentStep("Requesting token approval...");
+        toast.info("Please approve token spending in your wallet");
+
+        const approveTx = await tokenContract.approve(BRIDGE_CONTRACTS.PORTAL, totalAmountWei);
+        setCurrentStep("Waiting for approval confirmation...");
+        await approveTx.wait();
+        toast.success("Token approval confirmed");
+      }
+
+      // Step 3: Process each employee payment through bridge
+      setCurrentStep("Processing payments through bridge...");
+      const successfulPayments = [];
+      const failedPayments = [];
+
+      for (let i = 0; i < employees.length; i++) {
+        const employee = employees[i];
+        try {
+          setCurrentStep(`Paying ${employee.name} (${i + 1}/${employees.length})...`);
+
+          // Convert employee wallet address to bytes32
+          const aztecAddressBytes32 = employee.wallet_address.startsWith('0x')
+            ? employee.wallet_address.padEnd(66, '0')
+            : '0x' + employee.wallet_address.padEnd(64, '0');
+
+          // Generate random secret hash
+          const secretHash = ethers.hexlify(ethers.randomBytes(32));
+
+          // Amount in token decimals
+          const amount = ethers.parseUnits(employee.salary_amount.toString(), 6);
+
+          toast.info(`Sending ${employee.salary_amount} USDC to ${employee.name} via bridge...`);
+
+          // Call bridge deposit
+          const depositTx = await portalContract.depositToAztecPublic(
+            aztecAddressBytes32,
+            amount,
+            secretHash,
+            { gasLimit: 500000 }
+          );
+
+          setCurrentStep(`Confirming payment to ${employee.name}...`);
+          const receipt = await depositTx.wait();
+
+          if (receipt.status === 1) {
+            successfulPayments.push(employee.name);
+            toast.success(`✅ Paid ${employee.name}`);
+          } else {
+            throw new Error("Transaction failed");
+          }
+
+        } catch (error: any) {
+          console.error(`Failed to pay ${employee.name}:`, error);
+          failedPayments.push(employee.name);
+          toast.error(`Failed to pay ${employee.name}: ${error.message}`);
+        }
+      }
+
+      // Summary
+      if (failedPayments.length === 0) {
+        toast.success(`Successfully paid all ${employees.length} employees!`);
+      } else {
+        toast.warning(`Paid ${successfulPayments.length}/${employees.length} employees. ${failedPayments.length} failed.`);
+      }
 
       // Reset and close
       onOpenChange(false);
@@ -61,6 +154,7 @@ export const ProcessPayrollDialog = ({
       toast.error(error.message || "Failed to process payroll");
     } finally {
       setIsProcessing(false);
+      setCurrentStep("");
     }
   };
 
@@ -142,34 +236,30 @@ export const ProcessPayrollDialog = ({
             ))}
           </div>
 
-          {/* Privacy Option */}
-          <div className="flex items-start gap-3 p-4 bg-accent/5 border border-accent/20 rounded-lg">
-            <Checkbox
-              id="usePrivate"
-              checked={usePrivateBalance}
-              onCheckedChange={(checked) => setUsePrivateBalance(checked as boolean)}
-            />
-            <div className="flex-1">
-              <label
-                htmlFor="usePrivate"
-                className="text-sm font-semibold cursor-pointer flex items-center gap-2"
-              >
-                <Shield className="w-4 h-4 text-accent" />
-                Use Private Balance
-              </label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Payments will be sent privately on Aztec Network. Amounts will remain
-                confidential.
-              </p>
+          {/* Current Step Indicator */}
+          {isProcessing && currentStep && (
+            <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <span className="animate-spin text-primary">⏳</span>
+              <div>
+                <p className="text-sm font-medium">{currentStep}</p>
+                <p className="text-xs text-muted-foreground mt-1">Please confirm transactions in your wallet</p>
+              </div>
             </div>
+          )}
+
+          {/* Info */}
+          <div className="flex items-start gap-3 p-3 bg-accent/5 border border-accent/20 rounded-lg">
+            <Shield className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Payments will be sent from your Ethereum wallet via the Human Bridge to employees' Aztec addresses. Make sure you have enough USDC and ETH for gas fees.
+            </p>
           </div>
 
           {/* Warning */}
           <div className="flex items-start gap-3 p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
             <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
             <p className="text-xs text-muted-foreground">
-              This action cannot be undone. Make sure all employee wallet addresses are
-              correct before proceeding.
+              This action cannot be undone. Make sure all employee wallet addresses are correct before proceeding.
             </p>
           </div>
         </div>

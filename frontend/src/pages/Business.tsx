@@ -13,7 +13,7 @@ import { Building2, ArrowRight } from "lucide-react";
 
 const Business = () => {
   const { organization, refreshOrganization, user } = useAuth();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
   const navigate = useNavigate();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -27,7 +27,6 @@ const Business = () => {
 
     if (!address) {
       toast.error("Please connect your wallet first");
-      navigate("/auth");
       return;
     }
 
@@ -88,6 +87,43 @@ const Business = () => {
       setIsSubmitting(false);
     }
   };
+
+  // If wallet not connected, prompt to connect
+  if (!isConnected || !address) {
+    return (
+      <div className="min-h-screen p-8 flex items-center justify-center">
+        <Card className="p-8 max-w-2xl w-full bg-gradient-card border-border">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Building2 className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold mb-2">FLCU Business</h1>
+            <p className="text-muted-foreground text-lg">
+              Connect your wallet to access business payroll features
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <Button
+              size="lg"
+              className="w-full bg-primary hover:bg-primary/90"
+              onClick={() => navigate("/")}
+            >
+              Connect Wallet
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => navigate("/")}
+            >
+              Back to Home
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   // If no organization, show create organization UI
   if (!organization && !showCreateForm) {

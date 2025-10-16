@@ -87,9 +87,20 @@ export const db = {
   // Employees
   employees: {
     create: async (data: { org_id: string; wallet_address: string; name: string; salary_amount: number }) => {
+      // Look up if user exists with this aztec_address or wallet_address
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .or(`aztec_address.eq.${data.wallet_address},wallet_address.eq.${data.wallet_address}`)
+        .maybeSingle();
+
+      // Create employee record with optional user_id link
       return supabase
         .from('employees')
-        .insert(data)
+        .insert({
+          ...data,
+          user_id: existingUser?.id || null,
+        })
         .select()
         .single();
     },
