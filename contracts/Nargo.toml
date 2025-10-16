@@ -1,0 +1,6 @@
+[package]
+name = "payroll_vault"
+type = "contract"
+authors = [""]
+
+[dependencies]
