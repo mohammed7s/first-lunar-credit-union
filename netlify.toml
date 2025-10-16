@@ -10,6 +10,10 @@
   # Directory to publish (relative to base)
   publish = "dist"
 
+# Disable secrets scanning for VITE_ env vars (they're meant to be public in frontend bundles)
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY,VITE_SEPOLIA_RPC_URL,VITE_WALLETCONNECT_PROJECT_ID"
+
 # Environment variables (set these in Netlify dashboard)
 # VITE_SUPABASE_URL
 # VITE_SUPABASE_ANON_KEY
